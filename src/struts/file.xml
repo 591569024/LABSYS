@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.1//EN"
+	"http://struts.apache.org/dtds/struts-2.1.dtd">
+<struts>
+   <constant name="struts.devMode" value="false" />
+   <constant name="struts.multipart.maxSize" value="1000000000" />
+
+	<package name="file" extends="struts-default">
+	 <action name="upload" class="com.yangbing.actions.uploadFile">
+	  <interceptor-ref name="fileUpload">        
+        <param name="allowedTypes">text/plain,image/jpeg,application/msword</param>        
+      </interceptor-ref>
+      <interceptor-ref name="defaultStack" /> 
+       <result name="success">/success.jsp</result>
+       <result name="error">/error.jsp</result>
+     </action>
+     
+     <action name="FileDownload" class="com.yangbing.actions.FileDownload">  
+           <result name="success" type="stream">  
+               <param name="contentType">text/plain</param>  
+               <param name="contentDisposition">attachment;fileName="${fileName}"</param>  
+               <param name="inputName">downloadFile</param>  
+               <param name="bufferSize">1024</param>  
+           </result>  
+       </action>  
+       
+	</package>
+</struts>

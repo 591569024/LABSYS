@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans 
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/tx 
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/aop 
+        http://www.springframework.org/schema/aop/spring-aop.xsd
+        http://www.springframework.org/schema/context 
+        http://www.springframework.org/schema/context/spring-context.xsd">
+	<!-- bean definitions here -->
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location">
+			<value>classpath:database.properties</value>
+		</property>
+	</bean>
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="${jdbc.driverClassName}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+	</bean>
+
+	<!-- 注册SessionFactory -->
+	<bean id="mySessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="mappingDirectoryLocations" value="classpath:com/yangbing/bean"></property>
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+				<prop key="hibernate.hbm2ddl.auto">update</prop>
+				<prop key="hibernate.show_sql">true</prop>
+				<!-- hibernate.format_sql 属性使得在控制台上显示的sql语句格式更好看,不过比较鸡肋。 -->
+				<prop key="hibernate.format_sql">true</prop>
+				<prop key="hibernate.current_session_context_class">org.springframework.orm.hibernate4.SpringSessionContext
+				</prop>
+			</props>
+		</property>
+	</bean>
+	<!-- 注册DAO -->
+	<bean id="studentDao" class="com.yangbing.dao.IStudentHibDaoImp">
+		<property name="sf" ref="mySessionFactory" />
+	</bean>
+	<!-- 注册Service -->
+	<bean id="studentService" class="com.yangbing.service.studentServiceImp">
+		<property name="sDao" ref="studentDao" />
+	</bean>
+	<!-- 注册action -->
+	<bean id="daoAction" class="com.yangbing.actions.DaoAction" scope="prototype">
+		<property name="service" ref="studentService" />
+	</bean>
+	
+
+	<!-- 查询action -->
+	<bean id="queryAction" class="com.yangbing.actions.QueryAction"
+		scope="prototype">
+		<property name="service" ref="studentService" />
+	</bean>
+
+	<!-- 注册事物管理器 -->
+	<bean id="myTransactionManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="mySessionFactory" />
+	</bean>
+
+	<!-- 注册事物通知 -->
+	<tx:advice id="txAdvice" transaction-manager="myTransactionManager">
+		<tx:attributes>
+			<!-- 指定在连接点方法上应用的事物属性 -->
+			<tx:method name="add" isolation="DEFAULT" propagation="REQUIRED" />
+			<tx:method name="move" isolation="DEFAULT" propagation="REQUIRED" />
+			<tx:method name="modify" isolation="DEFAULT" propagation="REQUIRED" />
+			<tx:method name="find*" isolation="DEFAULT" propagation="REQUIRED"
+				read-only="true" />
+		</tx:attributes>
+	</tx:advice>
+	<!-- AOP配置 -->
+	<aop:config>
+		<!-- 指定切入点 -->
+		<aop:pointcut expression="execution(* *..service.*.*(..))"
+			id="servicePointcut" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="servicePointcut" />
+
+	</aop:config>
+
+
+</beans>
